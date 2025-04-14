@@ -21,7 +21,7 @@ export function createStore<T>(initialItems: T[] = []): Store<T> {
   };
   const actions: StoreActions<T> = {
     put: (item: T): Promise<T> => {
-      const pendingRequest = state.queue.pop();
+      const pendingRequest = state.queue.shift();
       if (pendingRequest) {
         pendingRequest(item);
       }
@@ -31,8 +31,7 @@ export function createStore<T>(initialItems: T[] = []): Store<T> {
       return Promise.resolve(item);
     },
     get: (): Promise<T> => {
-      console.log('get')
-      const pendingItem = state.items.pop();
+      const pendingItem = state.items.shift();
       if (pendingItem) {
         return Promise.resolve(pendingItem);
       }

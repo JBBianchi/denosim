@@ -19,6 +19,8 @@ export interface Simulation<TEvent = Event<unknown>> {
    * - Completed events (for historical tracking)
    */
   events: TEvent[];
+  terminate: (value: SimulationStats | PromiseLike<SimulationStats>) => void;
+  termination: Promise<SimulationStats>
 }
 
 /**
@@ -37,12 +39,14 @@ export enum EventState {
    * Will be executed when simulation time reaches scheduledAt.
    */
   Scheduled = "Scheduled",
+  Pending = "Pending",
 
   /**
    * Final state indicating the event has been fully processed.
    * Events in this state remain in the system for historical tracking.
    */
-  Finished = "Finished",
+  Completed = "Completed",
+  Terminated = "Terminated",
 }
 
 /**
@@ -59,10 +63,7 @@ export type ProcessStep<T = void> = Generator<
  * Holds the state of the ongoing process for an event.
  * Can yield an event for execution continuation.
  */
-export type PromiseProcessStep<T = void> = Promise<{
-  value: PromiseEvent<T> | undefined;
-  done: boolean | undefined
-}>;
+export type PromiseProcessStep<T = void> = Promise<T>;
 
 /**
  * Type definition for event process logic.
@@ -128,7 +129,7 @@ export type Event<T = void> = {
 
 export type PromiseEvent<T> = Omit<Event<T>, 'callback' | 'generator'> & {
   callback: PromiseProcess<T>;
-  generator?: PromiseProcessStep<T>;
+  //generator?: PromiseProcessStep<T>;
 }
 
 /**

@@ -13,9 +13,16 @@ import {
  * - Empty events array (no scheduled events)
  */
 export function initializeSimulation<T = unknown>(): Simulation<PromiseEvent<T>> {
+  let terminate;
+  const termination = new Promise<SimulationStats>(t => {
+    terminate = t;
+  });
+  if (!terminate) throw new Error('No termination function');
   return {
     currentTime: 0,
     events: [],
+    terminate,
+    termination
   };
 }
 
@@ -79,9 +86,9 @@ export function scheduleEvent<T>(
  * The simulation processes events in chronological order (earliest first).
  * Returns statistics about the simulation run.
  */
-export async function runSimulation<T = unknown>(sim: Simulation<PromiseEvent<T>>): Promise<SimulationStats> {
+export function runSimulation<T = unknown>(sim: Simulation<PromiseEvent<T>>): Promise<SimulationStats> {
+  const eventPromises = [];
   const start = performance.now();
-
   while (true) {
     // Get all scheduled events that haven't been processed yet,
     // so we can efficiently pop the earliest event
@@ -99,23 +106,19 @@ export async function runSimulation<T = unknown>(sim: Simulation<PromiseEvent<T>
     // Advance simulation time to this event's scheduled time
     sim.currentTime = event.scheduledAt;
 
+    event.status = EventState.Pending;
     // Process the event and get its final state
-    const finished = await handleEvent(sim, event);
-
-    // If the event yielded new events during processing, handle those too
-    const nextEvent = finished.generator
-      ? await handleEvent(sim, finished)
-      : finished;
-
-    // Update the simulation's events with the processed event
-    sim.events = scheduleEvent(sim, nextEvent);
+    eventPromises.push(handleEvent(sim, event, sim.termination).then(newEvent => {
+      sim.events = sim.events.map(existingEvent => existingEvent.id === newEvent.id ? newEvent : existingEvent);
+    }));
   }
 
   const end = performance.now();
 
-  return {
+  sim.terminate({
     duration: end - start, // Return real-world time taken for simulation
-  };
+  });
+  return Promise.allSettled(eventPromises).then(() => sim.termination);
 }
 
 /**
@@ -123,55 +126,53 @@ export async function runSimulation<T = unknown>(sim: Simulation<PromiseEvent<T>
  * Handles both immediate completion and yielding of new events.
  * Returns the completed event with updated status and timestamps.
  */
-export async function handleEvent<T>(sim: Simulation<PromiseEvent<T>>, event: PromiseEvent<T>): Promise<PromiseEvent<T>> {
-  // Get the generator - either from previous partial execution or a new one
-  const generator = event.generator ?? event.callback(sim, event);
-  // Execute next step of the generator
-  const { value, done } = await generator;
-
-  // Remove the original event from the queue
-  sim.events = sim.events.filter((previous) => previous.id !== event.id);
-
-  // If generator yielded a value (new event to schedule) and isn't done
-  if (!done && value) {
-    // Schedule the yielded event and update the current event's generator state
-    sim.events = scheduleEvent(sim, {
+export function handleEvent<T>(sim: Simulation<PromiseEvent<T>>, event: PromiseEvent<T>, simulationProcess: Promise<SimulationStats>): Promise<PromiseEvent<T>> {
+  return Promise.race([
+    simulationProcess.then(() => ({
       ...event,
-      scheduledAt: value.scheduledAt,
-      generator, // Save generator state for next execution
-    });
-  }
-
-  // Return completed event with updated metadata
-  return {
-    ...event,
-    finishedAt: sim.currentTime,
-    status: EventState.Finished,
-  };
+      finishedAt: sim.currentTime,
+      status: EventState.Terminated,
+    })),
+    event.callback(sim, event).then(item => ({
+      ...event,
+      item,
+      finishedAt: sim.currentTime,
+      status: EventState.Completed,
+    }))
+  ]);
 }
 
-/**
- * Generator function that creates and schedules a timeout event.
- * This is a utility for creating delayed events in the simulation.
- * Yields control until the timeout duration has passed.
- */
+// /**
+//  * Generator function that creates and schedules a timeout event.
+//  * This is a utility for creating delayed events in the simulation.
+//  * Yields control until the timeout duration has passed.
+//  */
+// export function timeout<T>(
+//   sim: Simulation<PromiseEvent<T>>,
+//   duration: number,
+//   callback?: PromiseProcess<T>,
+//   item?: T,
+// ): PromiseProcessStep<T> {
+//   // Fire an event that will be scheduled after specified duration
+//   const timeoutEvent = createEvent<T>(
+//     sim,
+//     sim.currentTime + duration,
+//     callback,
+//     item,
+//   );
+
+//   // Schedule the timeout event
+//   sim.events = scheduleEvent(sim, timeoutEvent);
+
+//   // Yield control (allowing other code to run until timeout completes)
+//   return Promise.resolve({ value: timeoutEvent, done: true });
+// }
+
 export function timeout<T>(
   sim: Simulation<PromiseEvent<T>>,
   duration: number,
   callback?: PromiseProcess<T>,
   item?: T,
-): PromiseProcessStep<T> {
-  // Fire an event that will be scheduled after specified duration
-  const timeoutEvent = createEvent<T>(
-    sim,
-    sim.currentTime + duration,
-    callback,
-    item,
-  );
+): {
 
-  // Schedule the timeout event
-  sim.events = scheduleEvent(sim, timeoutEvent);
-
-  // Yield control (allowing other code to run until timeout completes)
-  return Promise.resolve({ value: timeoutEvent, done: true });
 }
