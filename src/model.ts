@@ -3,7 +3,7 @@
  * - The current virtual time of the simulation
  * - All events that have been scheduled
  */
-export interface Simulation {
+export interface Simulation<TEvent = Event<unknown>> {
   /**
    * The current virtual time in the simulation.
    * Represents the timestamp up to which the simulation has processed.
@@ -18,7 +18,7 @@ export interface Simulation {
    * - Partially processed events with generator state
    * - Completed events (for historical tracking)
    */
-  events: Event<unknown>[];
+  events: TEvent[];
 }
 
 /**
@@ -56,20 +56,34 @@ export type ProcessStep<T = void> = Generator<
 >;
 
 /**
+ * Holds the state of the ongoing process for an event.
+ * Can yield an event for execution continuation.
+ */
+export type PromiseProcessStep<T = void> = Promise<{
+  value: PromiseEvent<T> | undefined;
+  done: boolean | undefined
+}>;
+
+/**
  * Type definition for event process logic.
  * Generator function that defines an event's behavior.
  * Can yield to pause execution and schedule intermediate events.
  */
 export type Process<T = void> = (
-  sim: Simulation, // Reference to the running simulation
+  sim: Simulation<Event<T>>, // Reference to the running simulation
   event: Event<T>, // The event instance being processed
 ) => ProcessStep<T>; // Generator that can yield events or nothing
+
+export type PromiseProcess<T = void> = (
+  sim: Simulation<PromiseEvent<T>>, // Reference to the running simulation
+  event: PromiseEvent<T>, // The event instance being processed
+) => PromiseProcessStep<T>
 
 /**
  * Represents a discrete event in the simulation system.
  * Events are immutable - state changes create new instances.
  */
-export interface Event<T = void> {
+export type Event<T = void> = {
   /** Unique identifier for the event */
   id: string;
 
@@ -112,6 +126,11 @@ export interface Event<T = void> {
   callback: Process<T>;
 }
 
+export type PromiseEvent<T> = Omit<Event<T>, 'callback' | 'generator'> & {
+  callback: PromiseProcess<T>;
+  generator?: PromiseProcessStep<T>;
+}
+
 /**
  * Statistics about a simulation run.
  * Currently tracks only duration, but could be extended with:
@@ -142,4 +161,25 @@ export interface Store<T> {
    * Earliest requests will be handled first.
    */
   requests: Event<T>[];
+}
+
+
+/**
+ * Utility data structure for inter-process synchronization.
+ */
+export interface PromiseStore<T> {
+  /** Unique identifier for the store */
+  id: string;
+
+  /**
+   * Array of items immediately available in the store.
+   * Put/Get operations (see resources.ts) work in a FIFO fashion.
+   */
+  items: T[];
+
+  /**
+   * Array of pending requests in the store.
+   * Earliest requests will be handled first.
+   */
+  requests: PromiseEvent<T>[];
 }

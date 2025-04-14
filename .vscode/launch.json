@@ -8,7 +8,7 @@
       "request": "launch",
       "name": "Launch Program",
       "type": "node",
-      "program": "${workspaceFolder}/examples/prod-cons.ts",
+      "program": "${workspaceFolder}/tests/store.test.ts",
       "cwd": "${workspaceFolder}",
       "env": {},
       "runtimeExecutable": "/usr/local/bin/deno",
@@ -17,6 +17,20 @@
         "--unstable",
         "--inspect-wait",
         "--allow-all"
+      ],
+      "attachSimplePort": 9229
+    },
+    {
+      "request": "launch",
+      "name": "Debug",
+      "type": "node",
+      //"program": "${workspaceFolder}/examples/prod-cons.ts",
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      "runtimeExecutable": "/usr/local/bin/deno",
+      "runtimeArgs": [
+        "test",
+        "--inspect-brk"
       ],
       "attachSimplePort": 9229
     }

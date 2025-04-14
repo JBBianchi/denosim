@@ -21,7 +21,7 @@ export function createStore<T>(initialItems: T[] = []): Store<T> {
  * The requested item will eventually be stored in the event.item property.
  */
 export function* get<T>(
-  sim: Simulation,
+  sim: Simulation<Event<T>>,
   event: Event<T>,
   store: Store<T>,
 ): ProcessStep<T> {
@@ -57,7 +57,7 @@ export function* get<T>(
  * Yields control immediately.
  */
 export function* put<T>(
-  sim: Simulation,
+  sim: Simulation<Event<T>>,
   _event: Event<T>,
   store: Store<T>,
   item: T,
