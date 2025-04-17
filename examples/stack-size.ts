@@ -1,4 +1,4 @@
-import { Event, Process, ProcessState, Simulation } from "../src/model.ts";
+import { Process } from "../src/model.ts";
 import {
   createEvent,
   initializeSimulation,
@@ -12,16 +12,14 @@ if (import.meta.main) {
 
   let FOO = 0;
 
-  const foo: Process = function* (
-    sim: Simulation,
-    event: Event,
-  ): ProcessState {
+  const foo: Process = function* (sim, event) {
     let newSim, newEvent;
-    while (sim.currentTime < 10000000) {
-      console.log(`[${sim.currentTime}] ${event.id} -- foo @ sleep: ${FOO}`);
-      [newSim, newEvent] = yield* timeout(sim, 1);
-      FOO += 1;
+    if (sim.currentTime < 10000000) {
       console.log(`[${sim.currentTime}] ${event.id} -- foo @ wake up: ${FOO}`);
+      FOO += 1;
+      [newSim, newEvent] = yield* timeout(sim, 1);
+    } else {
+      return yield;
     }
     return [newSim || sim, newEvent || event];
   };
@@ -29,8 +27,8 @@ if (import.meta.main) {
   const e1 = createEvent(sim, 0, foo);
   sim = scheduleEvent(sim, e1);
 
-  const stats = runSimulation(sim);
+  const [stop, stats] = runSimulation(sim);
 
-  console.log(`Simulation ended at ${sim.currentTime}`);
-  console.log(`Simulation took: ${stats[1].duration} ms`);
+  console.log(`Simulation ended at ${stop.currentTime}`);
+  console.log(`Simulation took: ${stats.duration} ms`);
 }
