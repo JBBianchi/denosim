@@ -7,7 +7,7 @@ import {
 } from "../src/simulation.ts";
 
 if (import.meta.main) {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const foo: Process<Record<string, string | undefined>> = function* (
     sim,
@@ -37,10 +37,10 @@ if (import.meta.main) {
   };
 
   const e1 = createEvent(sim, 20, bar, barStore);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
 
   const e2 = createEvent(sim, 25, foo, barStore);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   const [stop, stats] = runSimulation(sim);
 

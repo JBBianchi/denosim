@@ -18,7 +18,7 @@ export interface Simulation {
    * - Partially processed events with generator state
    * - Completed events (for historical tracking)
    */
-  events: Event<unknown>[];
+  events: readonly Event<unknown>[];
 
   /**
    * Optional generator state for multi-step processes.
@@ -59,8 +59,8 @@ export enum EventState {
  */
 export type ProcessState<T = void> = Generator<
   Event<T> | undefined,
-  [Simulation, Event<T>],
-  [Simulation, Event<T>]
+  readonly [Simulation, Event<T>],
+  readonly [Simulation, Event<T>]
 >;
 
 /**
@@ -152,11 +152,11 @@ export interface Store<T> {
    * Array of pending get requests in the store.
    * Earliest requests will be handled first.
    */
-  getRequests: Event<T>[];
+  getRequests: readonly Event<T>[];
 
   /**
    * Array of pending put requests in the store.
    * Earliest requests will be handled first.
    */
-  putRequests: Event<T>[];
+  putRequests: readonly Event<T>[];
 }

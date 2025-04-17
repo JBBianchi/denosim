@@ -38,7 +38,7 @@ import {
  * [60] Prod -- done [#3]...
  */
 if (import.meta.main) {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const store: Store<string> = createStore<string>();
 
@@ -69,22 +69,22 @@ if (import.meta.main) {
   };
 
   const e1 = createEvent(sim, 20, cons);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
 
   const e2 = createEvent(sim, 25, prod);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   const e3 = createEvent(sim, 45, prod);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e3);
 
   const e4 = createEvent(sim, 50, cons);
-  sim.events = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e4);
 
   const e5 = createEvent(sim, 60, prod);
-  sim.events = scheduleEvent(sim, e5);
+  sim = scheduleEvent(sim, e5);
 
   const e6 = createEvent(sim, 60, cons);
-  sim.events = scheduleEvent(sim, e6);
+  sim = scheduleEvent(sim, e6);
 
   const [stop, stats] = runSimulation(sim);
 

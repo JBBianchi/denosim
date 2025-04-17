@@ -8,10 +8,10 @@ import { Event, ProcessState, Simulation, Store } from "./model.ts";
  * - TODO: Capacity
  */
 export function createStore<T>(): Store<T> {
-  return {
+  return /*Object.freeze(*/{
     getRequests: [],
     putRequests: [],
-  };
+  }/*)*/;
 }
 
 /**
@@ -27,20 +27,20 @@ export function* get<T>(
 ): ProcessState<T> {
   while (true) {
     // Sort put requests in descending order so we can efficiently pop the earliest one
-    const putRequest = store.putRequests.sort((a, b) =>
+    const putRequest = [...store.putRequests].sort((a, b) =>
       b.scheduledAt - a.scheduledAt
     ).pop();
 
     // If a put request was already fired
     if (putRequest) {
       // Return the completed request to be rescheduled immediately
-      const updated = { ...putRequest, scheduledAt: sim.currentTime };
+      const updated = Object.freeze({ ...putRequest, scheduledAt: sim.currentTime });
       yield updated;
-      return [sim, updated];
+      return Object.freeze([sim, updated]);
     }
 
     // There was no pending put request, store the get request
-    store.getRequests = [...store.getRequests, event];
+    store.getRequests = Object.freeze([...store.getRequests, event]);
 
     // Yield control
     return yield;
@@ -67,20 +67,20 @@ export function* put<T>(
   }
 
   // Sort get requests in descending order so we can efficiently pop the earliest one
-  const getRequest = store.getRequests.sort((a, b) =>
+  const getRequest = [...store.getRequests].sort((a, b) =>
     b.scheduledAt - a.scheduledAt
   ).pop();
 
   // Either create a new put request or reschedule an existing get request
-  const putRequest = (!getRequest) ? { ...event, item } : {
+  const putRequest = Object.freeze((!getRequest) ? { ...event, item } : {
     ...getRequest,
     scheduledAt: sim.currentTime,
     item,
-  };
+  });
 
   if (!getRequest) {
     // There was no pending get request, store the put request
-    store.putRequests = [putRequest, ...store.putRequests];
+    store.putRequests = Object.freeze([putRequest, ...store.putRequests]);
   }
 
   // Yield continuation
@@ -98,20 +98,20 @@ function* blockingPut<T>(
 ): ProcessState<T> {
   while (true) {
     // Sort get requests in descending order so we can efficiently pop the earliest one
-    const getRequest = store.getRequests.sort((a, b) =>
+    const getRequest = [...store.getRequests].sort((a, b) =>
       b.scheduledAt - a.scheduledAt
     ).pop();
 
     // If a get request was already fired
     if (getRequest) {
       // Return the updated request to be rescheduled immediately
-      const updated = { ...getRequest, scheduledAt: sim.currentTime, item };
+      const updated = Object.freeze({ ...getRequest, scheduledAt: sim.currentTime, item });
       yield updated;
-      return [sim, updated];
+      return Object.freeze([sim, updated]);
     }
 
     // There was no pending get request, store the put request
-    store.putRequests = [...store.putRequests, { ...event, item }];
+    store.putRequests = Object.freeze([...store.putRequests, { ...event, item }]);
 
     // Yield control
     return yield;

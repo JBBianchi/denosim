@@ -8,7 +8,7 @@ import {
 } from "../src/simulation.ts";
 
 if (import.meta.main) {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   let FOO = 0;
 
@@ -16,19 +16,21 @@ if (import.meta.main) {
     sim: Simulation,
     event: Event,
   ): ProcessState {
+    let newSim, newEvent;
     while (sim.currentTime < 10000000) {
       console.log(`[${sim.currentTime}] ${event.id} -- foo @ sleep: ${FOO}`);
-      yield* timeout(sim, 1);
+      [newSim, newEvent] = yield* timeout(sim, 1);
       FOO += 1;
       console.log(`[${sim.currentTime}] ${event.id} -- foo @ wake up: ${FOO}`);
     }
+    return [newSim || sim, newEvent || event];
   };
 
   const e1 = createEvent(sim, 0, foo);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
 
   const stats = runSimulation(sim);
 
   console.log(`Simulation ended at ${sim.currentTime}`);
-  console.log(`Simulation took: ${stats.duration} ms`);
+  console.log(`Simulation took: ${stats[1].duration} ms`);
 }

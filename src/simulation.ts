@@ -14,11 +14,11 @@ import {
  * - Empty events array (no scheduled events)
  */
 export function initializeSimulation(): Simulation {
-  return {
+  return Object.freeze({
     currentTime: 0,
     events: [],
     state: {},
-  };
+  });
 }
 
 /**
@@ -38,7 +38,7 @@ export function runSimulation(sim: Simulation): [Simulation, SimulationStats] {
       (event.status === EventState.Scheduled)
     ).sort((a, b) => b.scheduledAt - a.scheduledAt);
 
-    const event = eventsTodo.pop();
+    const event = Object.freeze(eventsTodo.pop());
 
     if (!event) {
       break; // No more events to process
@@ -69,22 +69,28 @@ export function runSimulation(sim: Simulation): [Simulation, SimulationStats] {
  */
 export function step(sim: Simulation, event: Event<unknown>): Simulation {
   // Advance simulation time to this event's scheduled time
-  const nextSim = { ...sim, currentTime: event.scheduledAt };
+  let nextSim = Object.freeze({ ...sim, currentTime: event.scheduledAt });
 
   // Handle the event by executing its process, which may yield a new event
   const { updated, state, next } = handleEvent(nextSim, event);
 
   // Update the event's process state in the simulation container
-  nextSim.state = { ...nextSim.state, [updated.id]: state };
+  nextSim = Object.freeze({
+    ...nextSim,
+    state: Object.freeze({ ...nextSim.state, [updated.id]: state })
+  });
 
   // Update the event instance in the event queue if necessary
-  nextSim.events = nextSim.events.map((previous) =>
-    (previous.id === event.id) ? updated : previous
-  );
+  nextSim = Object.freeze({
+    ...nextSim,
+    events: Object.freeze(nextSim.events.map((previous) =>
+      (previous.id === event.id) ? updated : previous
+    ))
+  });
 
   // Schedule the next event yielded by the current process
   if (next) {
-    nextSim.events = scheduleEvent(nextSim, next);
+    nextSim = scheduleEvent(nextSim, next);
   }
 
   return nextSim;
@@ -104,7 +110,7 @@ export function createEvent<T>(
   callback?: Process<T>,
   item?: T,
 ): Event<T> {
-  return {
+  return Object.freeze({
     id: crypto.randomUUID(),
     status: EventState.Fired,
     firedAt: sim.currentTime,
@@ -113,7 +119,7 @@ export function createEvent<T>(
       return yield;
     },
     item,
-  };
+  });
 }
 
 /**
@@ -124,7 +130,7 @@ export function createEvent<T>(
 export function scheduleEvent<T>(
   sim: Simulation,
   event: Event<T>,
-): Event<unknown>[] {
+): Simulation {
   if (event.scheduledAt < sim.currentTime) {
     throw RangeError(
       `Event scheduled at a point in time in the past: ${event.id} ` +
@@ -132,10 +138,13 @@ export function scheduleEvent<T>(
     );
   }
 
-  return [
-    ...sim.events,
-    { ...event, status: EventState.Scheduled } as Event<unknown>,
-  ];
+  return Object.freeze({
+    ...sim,
+    events: [
+      ...sim.events,
+      { ...event, status: EventState.Scheduled } as Event<unknown>,
+    ]
+  });
 }
 
 /**
@@ -159,7 +168,7 @@ export function handleEvent<T>(
     // We will wait for that new event to be handled before continuing the original event
     // Return the event updated with continuation metadata along with its current state
     // Return the new event to be scheduled
-    return value.id !== event.id
+    return Object.freeze(value.id !== event.id
       ? {
         updated: {
           ...event,
@@ -172,20 +181,20 @@ export function handleEvent<T>(
       : {
         updated: { ...value },
         state: generator,
-      };
+      });
   }
 
   // The event has been fully handled
   // Return completed event with updated metadata
   // There is no next event to process
-  return {
+  return Object.freeze({
     updated: {
       ...event,
       finishedAt: sim.currentTime,
       status: EventState.Finished,
     },
     state: generator,
-  };
+  });
 }
 
 /**
@@ -211,5 +220,5 @@ export function* timeout<T = void>(
   const [newSim, newEvent] = yield timeoutEvent;
 
   // Return the updated context for closure continuation
-  return [newSim, newEvent];
+  return Object.freeze([newSim, newEvent]);
 }

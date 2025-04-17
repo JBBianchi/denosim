@@ -9,12 +9,12 @@ import {
 } from "../src/simulation.ts";
 
 Deno.test("basic event scheduling", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const e1 = createEvent(sim, 10);
   assertEquals(sim.events.length, 0);
 
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
   assertEquals(sim.events.length, 1);
 
   const [stop, _stats] = runSimulation(sim);
@@ -25,10 +25,10 @@ Deno.test("basic event scheduling", () => {
 });
 
 Deno.test("zero-duration events", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const e1 = createEvent(sim, sim.currentTime);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
 
   const [stop, _stats] = runSimulation(sim);
 
@@ -36,16 +36,16 @@ Deno.test("zero-duration events", () => {
 });
 
 Deno.test("basic out of order scheduling", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const e1 = createEvent(sim, 10);
   const e2 = createEvent(sim, 5);
   const e3 = createEvent(sim, 15);
   assertEquals(sim.events.length, 0);
 
-  sim.events = scheduleEvent(sim, e3);
-  sim.events = scheduleEvent(sim, e2);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e1);
   assertEquals(sim.events.length, 3);
 
   const [stop, _stats] = runSimulation(sim);
@@ -55,7 +55,7 @@ Deno.test("basic out of order scheduling", () => {
 });
 
 Deno.test("basic event ordering", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const processedOrder: number[] = [];
   const cb: Process = function* (_sim, event) {
@@ -70,12 +70,12 @@ Deno.test("basic event ordering", () => {
   const e5 = createEvent(sim, 2, cb);
   const e6 = createEvent(sim, 50, cb);
 
-  sim.events = scheduleEvent(sim, e1);
-  sim.events = scheduleEvent(sim, e2);
-  sim.events = scheduleEvent(sim, e3);
-  sim.events = scheduleEvent(sim, e4);
-  sim.events = scheduleEvent(sim, e5);
-  sim.events = scheduleEvent(sim, e6);
+  sim = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e5);
+  sim = scheduleEvent(sim, e6);
 
   const [stop, _stats] = runSimulation(sim);
 
@@ -85,11 +85,11 @@ Deno.test("basic event ordering", () => {
 });
 
 Deno.test("scheduling events in the past", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const cb: Process = function* (sim, _event) {
     const past = createEvent(sim, sim.currentTime - 1);
-    sim.events = scheduleEvent(sim, past);
+    sim = scheduleEvent(sim, past);
     return yield;
   };
 
@@ -97,9 +97,9 @@ Deno.test("scheduling events in the past", () => {
   const e2 = createEvent(sim, 10, cb);
 
   assertThrows(() => {
-    sim.events = scheduleEvent(sim, e1);
+    sim = scheduleEvent(sim, e1);
   });
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   assertThrows(() => {
     const [_stop, _stats] = runSimulation(sim);
@@ -107,7 +107,7 @@ Deno.test("scheduling events in the past", () => {
 });
 
 Deno.test("event callbacks scheduling", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const results: Record<number, Event> = {};
 
@@ -119,9 +119,9 @@ Deno.test("event callbacks scheduling", () => {
   const e1 = createEvent(sim, 10, cb);
   const e2 = createEvent(sim, 20, cb);
   const e3 = createEvent(sim, 30, cb);
-  sim.events = scheduleEvent(sim, e1);
-  sim.events = scheduleEvent(sim, e2);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e3);
   assertEquals(sim.events.length, 3);
 
   const [stop, _stats] = runSimulation(sim);
@@ -134,7 +134,7 @@ Deno.test("event callbacks scheduling", () => {
 });
 
 Deno.test("event item passing", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const foo: Process<Record<string, string | undefined>> = function* (
     _sim: Simulation,
@@ -164,10 +164,10 @@ Deno.test("event item passing", () => {
   };
 
   const e1 = createEvent(sim, 20, foo, barStore);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
 
   const e2 = createEvent(sim, 25, bar, barStore);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   const [_stop, _stats] = runSimulation(sim);
 
@@ -176,7 +176,7 @@ Deno.test("event item passing", () => {
 });
 
 Deno.test("event timeout scheduling", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const timings: Record<string, number> = {
     "before": -1,
@@ -202,7 +202,7 @@ Deno.test("event timeout scheduling", () => {
 
   const e1 = createEvent(sim, 10, cb, timings);
 
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
   assertEquals(sim.events.length, 1);
 
   const [stop, _stats] = runSimulation(sim);

@@ -9,7 +9,7 @@ import {
 import { createStore, get, put } from "../src/resources.ts";
 
 Deno.test("basic store operations", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const store: Store<string> = createStore<string>();
   const result: Record<string, string | undefined> = {};
@@ -27,14 +27,14 @@ Deno.test("basic store operations", () => {
   };
 
   const e1 = createEvent(sim, 0, prod);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
   const e2 = createEvent(sim, 0, cons);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   const e3 = createEvent(sim, 10, prod);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e3);
   const e4 = createEvent(sim, 20, cons);
-  sim.events = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e4);
 
   const [_stop, _stats] = runSimulation(sim);
 
@@ -45,7 +45,7 @@ Deno.test("basic store operations", () => {
 });
 
 Deno.test("out-of-order store operations", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const store: Store<string> = createStore<string>();
   const result: Record<string, string | undefined> = {};
@@ -63,14 +63,14 @@ Deno.test("out-of-order store operations", () => {
   };
 
   const e1 = createEvent(sim, 30, cons);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
   const e2 = createEvent(sim, 40, prod);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   const e3 = createEvent(sim, 50, cons);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e3);
   const e4 = createEvent(sim, 50, prod);
-  sim.events = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e4);
 
   const [_stop, _stats] = runSimulation(sim);
 
@@ -81,7 +81,7 @@ Deno.test("out-of-order store operations", () => {
 });
 
 Deno.test("blocking/non-blocking put operations", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const store: Store<string> = createStore<string>();
   const result: Record<string, string | undefined> = {};
@@ -112,14 +112,14 @@ Deno.test("blocking/non-blocking put operations", () => {
   };
 
   const e1 = createEvent(sim, 30, prodBlock);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
   const e2 = createEvent(sim, 40, cons);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   const e3 = createEvent(sim, 50, prod);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e3);
   const e4 = createEvent(sim, 60, cons);
-  sim.events = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e4);
 
   const [_stop, _stats] = runSimulation(sim);
 
@@ -133,7 +133,7 @@ Deno.test("blocking/non-blocking put operations", () => {
 });
 
 Deno.test("cons > prod: unbalanced store operations", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const store: Store<string> = createStore<string>();
   const result: Record<string, string | undefined> = {};
@@ -151,13 +151,13 @@ Deno.test("cons > prod: unbalanced store operations", () => {
   };
 
   const e1 = createEvent(sim, 50, cons);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
   const e2 = createEvent(sim, 55, cons);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
   const e3 = createEvent(sim, 60, cons);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e3);
   const e4 = createEvent(sim, 70, prod);
-  sim.events = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e4);
 
   const [_stop, _stats] = runSimulation(sim);
 
@@ -169,7 +169,7 @@ Deno.test("cons > prod: unbalanced store operations", () => {
 });
 
 Deno.test("prod > cons: unbalanced store operations", () => {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const store: Store<string> = createStore<string>();
   const result: Record<string, string | undefined> = {};
@@ -187,13 +187,13 @@ Deno.test("prod > cons: unbalanced store operations", () => {
   };
 
   const e1 = createEvent(sim, 50, prod);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
   const e2 = createEvent(sim, 55, prod);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
   const e3 = createEvent(sim, 60, prod);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e3);
   const e4 = createEvent(sim, 70, cons);
-  sim.events = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e4);
 
   const [_stop, _stats] = runSimulation(sim);
 

@@ -24,7 +24,7 @@ import {
  * Simulation ended at 50
  */
 if (import.meta.main) {
-  const sim = initializeSimulation();
+  let sim = initializeSimulation();
 
   const foo: Process = function* (
     sim: Simulation,
@@ -62,22 +62,22 @@ if (import.meta.main) {
   };
 
   const e1 = createEvent(sim, 10, foo);
-  sim.events = scheduleEvent(sim, e1);
+  sim = scheduleEvent(sim, e1);
 
   const e2 = createEvent(sim, 20, bar);
-  sim.events = scheduleEvent(sim, e2);
+  sim = scheduleEvent(sim, e2);
 
   const e3 = createEvent(sim, 30, foo);
-  sim.events = scheduleEvent(sim, e3);
+  sim = scheduleEvent(sim, e3);
 
   const e4 = createEvent(sim, 37, foo);
-  sim.events = scheduleEvent(sim, e4);
+  sim = scheduleEvent(sim, e4);
 
   const e5 = createEvent(sim, 50, foo);
-  sim.events = scheduleEvent(sim, e5);
+  sim = scheduleEvent(sim, e5);
 
   const e6 = createEvent(sim, 60, baz);
-  sim.events = scheduleEvent(sim, e6);
+  sim = scheduleEvent(sim, e6);
 
   const [stop, stats] = runSimulation(sim);
 
